@@ -1,0 +1,263 @@
+<!DOCTYPE html>  
+<html>
+<head>
+	<title>chat_e1t</title>
+    <meta charset="UTF-8" />
+    <style>
+       #people_div{width:15%; border:1px solid black; background-color:#ffc; font-size: 12px;  float:left;}
+       #room_adap_div{width:25%; border:1px solid black; background-color:#cfc; font-size: 12px;  float:left;} 
+       #room_adap{;padding: 5px; }
+       #room_class_div{width:30%; border:1px solid black; background-color:#8fc; font-size: 12px;  float:left;} 
+       #room_class{;padding: 5px; }                    
+       #msgs_div{width:28%; border:1px solid black; background-color:#eef; font-size: 12px;padding: 0; float:left; }  
+       #msgs{;padding: 5px; } 
+                  
+       #login{background-color:green;}    
+       #chat{}
+       #create_room{}            
+       #join_to_room{}
+       #leave_room{background-color:blue;} 
+       #remove_room{background-color:yellow;}            
+                     
+       #texto{width:100%; border:1px solid black; background-color:#fdd;float:right;}  
+       #entradas{width:300px; background-color:#abc;float:right;}
+       #login, #chat, #create_room, #join_to_room, #leave_room, #remove_room{height:40px;background-color:green;} /**/       	
+    </style>	
+    <script src="http://localhost:8000/socket.io/socket.io.js"></script>
+    <script src='../../../jquery-2.1.1.min.js'></script>
+    <script src='../../../debug.js'></script>
+
+    <script>
+$(function()                                                                //$('#texto').append('<br> .');
+{      
+	    $('#texto').append('<br>start');
+        var socket = io.connect("localhost:8000");  
+        $('#texto').append('<br>Сервер підключено.<br>');
+        
+        $("#chat").hide();
+        $("#create_room").hide();
+        $("#join_to_room").hide();
+        $("#leave_room").hide();
+        $("#remove_room").hide();                        
+        $("#name").focus();
+        $("form").submit(function(event) { event.preventDefault(); });
+//----------------------------------------------------------------------------
+        $("#join").click(function()//відсилає імя
+        {
+            var name = $("#name").val();//textfield1
+            if (name != "") 
+            {
+                socket.emit("join", name);//-----------emit---------->
+                $("#login").detach();//form1 se limpia
+                $("#chat").show();//form2
+                $("#create_room").show(); 
+                $("#join_to_room").show(); 
+                $("#leave_room").show(); 
+                $("#remove_room").show();                                      
+                $("#msg").focus();//textfield2
+                ready = true;
+            }
+        });
+        $("#name").keypress(function(e)
+        {
+            if(e.which == 13) 
+            {
+                var name = $("#name").val();//textfield1
+                if (name != "") 
+                {
+                    socket.emit("join", name);//-----------emit---------->
+                    $("#login").detach();//form1 se limpia
+                    $("#chat").show();//form2
+                    $("#msg").focus();//textfield2
+                }
+            }
+        });
+        $("#send").click(function()
+        {
+            var msg = $("#msg").val();
+            socket.emit("send", msg);
+            $("#msg").val("");
+        });
+        $("#msg").keypress(function(e)
+        {
+            if(e.which == 13) 
+            { 
+            	var msg = $("#msg").val(); 
+            	socket.emit("send", msg); 
+            	$("#msg").val(""); }
+        });
+        $("#create_room_button").click(function()//creat room
+        {
+            var name = $("#create_room_name").val();//textfield3
+            if (name != "") 
+            {
+                if(ready)socket.emit("createRoom", name);//-----------emit---------->
+                else $('#texto').append('Primero hay que hacer join<br>');
+                //$("#room").detach();//form3 se limpia
+                //$("#chat").show();//form2
+                //$("#msg").focus();//textfield3
+            }
+        });
+        $("#join_to_room_button").click(function()//join to room
+        {
+            var name = $("#join_to_room_name").val();//textfield3
+            if (name != "") 
+            {
+                if(ready)socket.emit("joinRoom", name);//-----------emit---------->
+                else $('#texto').append('Primero hay que meter tu nombre<br>');
+                //$("#room").detach();//form3 se limpia
+                //$("#chat").show();//form2
+                //$("#msg").focus();//textfield3
+            }
+        });
+        $("#leave_room_button").click(function()//creat room
+        {
+            var name = $("#leave_room_name").val();//textfield3
+            if (name != "") 
+            {
+                if(ready)socket.emit("leaveRoom", name);//-----------emit---------->
+                else $('#texto').append('Primero hay que hacer join<br>');
+                //$("#room").detach();//form3 se limpia
+                //$("#chat").show();//form2
+                //$("#msg").focus();//textfield3
+            }
+        });
+        $("#remove_room_button").click(function()//join to room
+        {
+            var name = $("#remove_room_name").val();//textfield3
+            if (name != "") 
+            {
+                if(ready)socket.emit("removeRoom", name);//-----------emit---------->
+                else $('#texto').append('Primero hay que meter tu nombre<br>');
+                //$("#room").detach();//form3 se limpia
+                //$("#chat").show();//form2
+                //$("#msg").focus();//textfield3
+            }
+        });
+        
+        socket.on("update", function(msg){ if(ready)$("#msgs").append("" + msg + ""); })
+        socket.on("update-people", function(people)
+        {
+            if(ready) 
+            {
+                $("#people").empty();                         //people[client.id] = {"name" : name, "room" : roomID};
+                $.each(people, function(clientid, obj) { $('#people').append("" + obj['name']+'<br>' + ""); });
+            }
+        });
+        socket.on("roomList", function(rooms_adap, rooms_obj, people_obj)
+        {
+            if(ready) 
+            {                	 
+            	//$('#room_adap').text(""); 
+            	$('#room_adap').append("-----------------------<br>");             	
+                $.each(rooms_adap, function(room_name, obj) 
+                {
+                	 $('#texto').append(room_name + "<br>");
+               	                 	
+                	 $('#room_adap').append(room_name + "<br>");
+                	 $.each(obj, function(name, valor)
+                	 {
+                	 	$('#texto').append('- - -'+name +'='+valor+"<br>");                	 	                	 	
+                	 	if((typeof valor)==='object')
+                	 	{
+                	 		$.each(valor, function(nam, val)
+                	 		{
+                	 			$('#texto').append('---------------'+nam +'='+val+"<br>");
+                	 		});
+                	 	}
+                	 });	 
+                });
+                $('#room_class').append("---------------------------<br>"); 
+                $.each(rooms_obj, function(uuid, obj) 
+                {
+                	 $('#room_class').append('room_name='+obj['name'] + "<br>");
+                	 $('#room_class').append(uuid + "<br>");
+                	 $.each(obj.people, function(npp, clientid) 
+               		 {
+                		 $('#room_class').append(npp+'.--->'+people_obj[clientid].name + "<br>");             	 	 
+                	 });
+                     $('#room_class').append("<br>");                 	 	 
+                });    
+            }
+        });        
+        socket.on("chat", function(who, msg){ if(ready) { $("#msgs").append("" + who + " says: " + msg + ""); }});
+        socket.on("disconnect", function()
+        { 
+        	$("#msgs").append("The server is not available");
+            $("#msg").attr("disabled", "disabled");
+            $("#send").attr("disabled", "disabled");
+        });
+
+    });
+</script>
+<body>
+
+
+  <div id="people_div">
+  	Список підключених людей<br><br>
+      <ul id="people"> </ul>
+  </div>
+  
+  <div id="room_adap_div">
+  	Список кімнат з адаптера<br><br>
+      <ul id="room_adap"> </ul>
+  </div>
+  
+  <div id="room_class_div">
+  	Список room_classes<br><br>
+      <ul id="room_class"> </ul>
+  </div>
+      
+  <div id="msgs_div">
+      ---Повідомлення від сервера---<br><br>
+      <ul id="msgs"> </ul>
+  </div>
+
+  <div id="entradas">
+    <div id="login">
+        <form>
+            <input type="text" placeholder="Your name" id="name">
+            <input type="button" id="join" value="Join" >
+        </form>
+    </div>
+
+    <div id="chat">
+        <form id="2">
+            <input type="text" placeholder="Your message" id="msg">
+            <input type="button" id="send" value="Send" >
+        </form>
+    </div>
+
+    <div id="create_room">
+        <form id="3">
+            <input type="text" placeholder="Create room" id="create_room_name">
+            <input type="button" id="create_room_button" value="createRoom" >
+        </form>
+    </div> 
+
+    <div id="join_to_room">
+        <form id="4">
+            <input type="text" placeholder="Join to room" id="join_to_room_name">
+            <input type="button" id="join_to_room_button" value="jointoRoom" >
+        </form>
+    </div>
+
+    <div id="leave_room">
+        <form id="5">
+            <input type="text" placeholder="Leave room" id="leave_room_name">
+            <input type="button" id="leave_room_button" value="leaveRoom" >
+        </form>
+    </div> 
+
+    <div id="remove_room">
+        <form id="6">
+            <input type="text" placeholder="Remove room" id="remove_room_name">
+            <input type="button" id="remove_room_button" value="removeRoom" >
+        </form>
+    </div>    
+    
+     
+  </div>      
+<div id='texto'>---</div>
+</body>
+</html>

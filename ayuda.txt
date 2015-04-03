@@ -1,0 +1,71 @@
+people_obj--- виглядає шо в цьому обєкті буде список всіх клієнтів  people_obj[client.id]={"name" : name, "room" : roomID(uuid)}; 
+              і це дає можливість обмеження кожного клієта створенням тілки однієї кімнати.
+              
+rooms_obj --- виглядає шо в цьому обєкті буде список всіх імен(uuid) для room_class = new Room(name, id, client.id); тобто    		
+    		  rooms_obj[ де id==uuid ] = new Room(name(кімнати), id==uuid, client.id);
+
+
+
+cuando se conecta hace solo dos cosas:
+
+              	client.room = 'myroom';---текуча кімната
+	            client.join('myroom');  //кожен хто робить коннект, запишеться в цю кімнату.
+	            
+luego se permite introducir nombre, client hace:    (після підключення першим ділом вводим своє імя,тобто ця функція 
+                                                                                                             обовязково перша)
+
+                socket.emit("join", name);//-----------emit---------->
+                ready = true;
+                
+         server responde con--> client.on("join",
+            
+               people_obj[client.id] = {"name" : name, "room" : roomID}; donde roomID = null;
+               clients_array.push(client); 
+               io.sockets.emit("update",     io.sockets.emit("update-people",         client.emit("roomList",
+               
+client.on("createRoom"
+
+  		if (people_obj[client.id].room === null) ... обмеження кожного клієта створенням тілки однієї кімнати.
+    		
+    		rooms_obj[id==uuid] = new Room(name, id, client.id);-----Room(name, id, owner)
+    		room_class.addPerson(client.id); 
+    		
+    		io.sockets.emit("roomList", {rooms_obj: rooms_obj});---всем пользователям,---поновити список кімнат
+    		client.room = name; ---текуча кімната
+    		client.join(client.room);---і логічно є підключити зразу клієнта до цієї кімнати
+    		
+    		people_obj[client.id].room = id;---клієнт створив кімнату, позначити це в піпел обекті
+  		} 
+  		
+	client.on("removeRoom", function(id) 
+	{  
+    	var room = rooms_obj[id];---получаєм room_class для даного uuid
+    	if (room) 
+    	{
+      		if (client.id === room.owner) --- only the owner can remove the room
+      		{
+        		var personCount = room.people.length;
+        		if (personCount > 2) 
+        		{
+          			console.log('there are still people in the room warning'); //This will be handled later
+        		}  
+        		else 
+        		{
+          			if (client.id === room.owner) 
+          			{
+            			io.sockets.in(client.room).emit("update", "The owner (" +people_obj[client.id].name + ") removed the room.");
+            			var i = 0;
+            			while(i < clients_array.length) 
+            			{
+              				if(clients_array[i].id === room.people[i]) {  people_obj[clients_array[i].id].inroom = null; clients_array[i].leave(room.name); }
+              				++i;
+            			}
+            			delete rooms_obj[id];
+            			people_obj[room.owner].owns = null;
+            			io.sockets.emit("roomList", {rooms_obj: rooms_obj});
+          			}
+        		}
+      		} 
+      		else { client.emit("update", "Only the owner can remove a room.");}
+    	}
+	});  		
